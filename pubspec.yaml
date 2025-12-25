@@ -1,0 +1,13 @@
+name: dart_doc_json
+description: A Dart documentation generator that outputs JSON instead of HTML
+version: 1.0.0
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  analyzer: ^6.0.0
+  path: ^1.8.0
+  args: ^2.4.0
+
+dev_dependencies:
+  lints: ^3.0.0
