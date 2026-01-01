@@ -2,6 +2,7 @@
 
 class DocLibrary {
   final String name;
+  final bool isAnonymous;
   final String? documentation;
   final List<DocClass> classes;
   final List<DocEnum> enums;
@@ -12,6 +13,7 @@ class DocLibrary {
 
   DocLibrary({
     required this.name,
+    required this.isAnonymous,
     this.documentation,
     required this.classes,
     required this.enums,
@@ -23,6 +25,7 @@ class DocLibrary {
 
   Map<String, dynamic> toJson() => {
         'name': name,
+        'isAnonymous': isAnonymous,
         'documentation': documentation,
         'classes': classes.map((c) => c.toJson()).toList(),
         'enums': enums.map((e) => e.toJson()).toList(),
