@@ -9,9 +9,15 @@ import '../lib/models.dart';
 
 void main(List<String> arguments) async {
   final parser = ArgParser()
-    ..addOption('input', abbr: 'i', help: 'Input file (export .dart) or directory', mandatory: true)
-    ..addOption('output', abbr: 'o', help: 'Output JSON file (optional, defaults to input name + .json)')
-    ..addOption('export-dir', help: 'Base directory for organizing output files by library structure')
+    ..addOption('input',
+        abbr: 'i',
+        help: 'Input file (export .dart) or directory',
+        mandatory: true)
+    ..addOption('output',
+        abbr: 'o',
+        help: 'Output JSON file (optional, defaults to input name + .json)')
+    ..addOption('export-dir',
+        help: 'Base directory for organizing output files by library structure')
     ..addFlag('help', abbr: 'h', help: 'Show usage', negatable: false);
 
   try {
@@ -19,14 +25,16 @@ void main(List<String> arguments) async {
 
     if (results['help'] as bool) {
       print('Dart Documentation JSON Generator');
-      print('Usage: dart run bin/dart_doc_json.dart -i <input> [-o <output>] [--export-dir <dir>]');
+      print(
+          'Usage: dart run bin/dart_doc_json.dart -i <input> [-o <output>] [--export-dir <dir>]');
       print('\nExamples:');
       print('  # Analyze a directory');
       print('  dart run bin/dart_doc_json.dart -i lib -o docs.json');
       print('  # Analyze an export file (e.g., cupertino.dart)');
       print('  dart run bin/dart_doc_json.dart -i /path/to/cupertino.dart');
       print('  # Organize output by library structure');
-      print('  dart run bin/dart_doc_json.dart -i /path/to/cupertino.dart --export-dir output/flutter');
+      print(
+          '  dart run bin/dart_doc_json.dart -i /path/to/cupertino.dart --export-dir output/flutter');
       print(parser.usage);
       return;
     }
@@ -38,7 +46,7 @@ void main(List<String> arguments) async {
     // Determine if input is a file or directory
     final inputFile = File(input);
     final inputDirectory = Directory(input);
-    
+
     bool isExportFile = false;
     String baseDir = '';
     List<String> filesToAnalyze = [];
@@ -50,7 +58,7 @@ void main(List<String> arguments) async {
       print('Parsing export file: $input');
       filesToAnalyze = await parseExportFile(input, baseDir);
       print('Found ${filesToAnalyze.length} exported files');
-      
+
       // Default output name based on input file
       if (outputFile == null) {
         final baseName = p.basenameWithoutExtension(input);
@@ -60,13 +68,14 @@ void main(List<String> arguments) async {
       // Input is a directory
       baseDir = input;
       filesToAnalyze = [input];
-      
+
       // Default output name
       if (outputFile == null) {
         outputFile = 'documentation.json';
       }
     } else {
-      print('Error: Input does not exist or is not a .dart file or directory: $input');
+      print(
+          'Error: Input does not exist or is not a .dart file or directory: $input');
       exit(1);
     }
 
@@ -79,26 +88,26 @@ void main(List<String> arguments) async {
 
     if (exportDir != null) {
       // Organize output by library structure
-      await analyzeAndOrganize(filesToAnalyze, baseDir, exportDir, isExportFile);
+      await analyzeAndOrganize(
+          filesToAnalyze, baseDir, exportDir, isExportFile);
     } else {
       // Single output file
       final libraries = await analyzeFiles(filesToAnalyze, baseDir);
-      
+
       print('Found ${libraries.length} libraries');
-      
+
       final jsonOutput = libraries.map((lib) => lib.toJson()).toList();
       final jsonString = JsonEncoder.withIndent('  ').convert(jsonOutput);
-      
+
       // Create output directory if it doesn't exist
       final outputDir = p.dirname(outputFile);
       if (outputDir != '.' && !Directory(outputDir).existsSync()) {
         Directory(outputDir).createSync(recursive: true);
       }
-      
+
       await File(outputFile).writeAsString(jsonString);
       print('Documentation written to: $outputFile');
     }
-    
   } catch (e, stackTrace) {
     print('Error: $e');
     print(stackTrace);
@@ -108,14 +117,15 @@ void main(List<String> arguments) async {
 }
 
 /// Parse an export file to extract all exported file paths
-Future<List<String>> parseExportFile(String exportFilePath, String baseDir) async {
+Future<List<String>> parseExportFile(
+    String exportFilePath, String baseDir) async {
   final content = await File(exportFilePath).readAsString();
   final exportPaths = <String>[];
-  
+
   // Regex to match export statements: export 'path/to/file.dart';
   final exportRegex = RegExp(r'''export\s+['"]([^'"]+\.dart)['"]''');
   final matches = exportRegex.allMatches(content);
-  
+
   for (final match in matches) {
     final relativePath = match.group(1)!;
     // Resolve relative path
@@ -126,56 +136,65 @@ Future<List<String>> parseExportFile(String exportFilePath, String baseDir) asyn
       print('Warning: Exported file not found: $absolutePath');
     }
   }
-  
+
   return exportPaths;
 }
 
 /// Analyze files and organize output by library structure
-Future<void> analyzeAndOrganize(List<String> filePaths, String baseDir, String exportDir, bool isExportFile) async {
+Future<void> analyzeAndOrganize(List<String> filePaths, String baseDir,
+    String exportDir, bool isExportFile) async {
   print('Analyzing ${filePaths.length} files...');
-  
+
   for (final filePath in filePaths) {
     try {
       final libraries = await analyzeFiles([filePath], baseDir);
-      
+
       if (libraries.isEmpty) continue;
-      
+
       // Determine output path based on source file structure
       String outputPath;
       if (isExportFile) {
         // Extract relative path from base directory
         final relativePath = p.relative(filePath, from: baseDir);
-        final relativeDir = p.dirname(relativePath);
+        var relativeDir = p.dirname(relativePath);
         final baseName = p.basenameWithoutExtension(filePath);
-        
+
+        // Remove 'src/' from the beginning of the path if present
+        if (relativeDir.startsWith('src/') || relativeDir.startsWith('src\\')) {
+          relativeDir = relativeDir.substring(4);
+        } else if (relativeDir == 'src') {
+          relativeDir = '.';
+        }
+
         // Create directory structure
         final outputSubDir = p.join(exportDir, relativeDir);
         Directory(outputSubDir).createSync(recursive: true);
-        
+
         outputPath = p.join(outputSubDir, '$baseName.json');
       } else {
         final baseName = p.basenameWithoutExtension(filePath);
         Directory(exportDir).createSync(recursive: true);
         outputPath = p.join(exportDir, '$baseName.json');
       }
-      
+
       final jsonOutput = libraries.map((lib) => lib.toJson()).toList();
       final jsonString = JsonEncoder.withIndent('  ').convert(jsonOutput);
-      
+
       await File(outputPath).writeAsString(jsonString);
       print('  ✓ ${p.relative(outputPath, from: exportDir)}');
     } catch (e) {
       print('  ✗ Error analyzing $filePath: $e');
     }
   }
-  
+
   print('\nDocumentation written to: $exportDir/');
 }
 
 /// Analyze Dart files and return libraries
-Future<List<DocLibrary>> analyzeFiles(List<String> paths, String baseDir) async {
+Future<List<DocLibrary>> analyzeFiles(
+    List<String> paths, String baseDir) async {
   final libraries = <DocLibrary>[];
-  
+
   for (final path in paths) {
     if (File(path).existsSync()) {
       // Single file
@@ -187,7 +206,7 @@ Future<List<DocLibrary>> analyzeFiles(List<String> paths, String baseDir) async 
       libraries.addAll(libs);
     }
   }
-  
+
   return libraries;
 }
 
@@ -264,8 +283,10 @@ Future<DocLibrary> _processLibrary(LibraryElement library) async {
   // Use filename (without .dart) if library name is empty
   final bool isAnonymous = library.name.isEmpty;
   String libraryName = library.name;
-  if (isAnonymous && library.definingCompilationUnit.source.uri.pathSegments.isNotEmpty) {
-    final fileName = library.definingCompilationUnit.source.uri.pathSegments.last;
+  if (isAnonymous &&
+      library.definingCompilationUnit.source.uri.pathSegments.isNotEmpty) {
+    final fileName =
+        library.definingCompilationUnit.source.uri.pathSegments.last;
     libraryName = fileName.replaceAll('.dart', '');
   }
 
@@ -285,11 +306,11 @@ Future<DocLibrary> _processLibrary(LibraryElement library) async {
 /// Clean documentation by removing /// and // while preserving newlines
 String? _cleanDocumentation(String? doc) {
   if (doc == null) return null;
-  
+
   // Split by lines
   final lines = doc.split('\n');
   final cleanedLines = <String>[];
-  
+
   for (var line in lines) {
     // Remove leading /// or //
     line = line.trimLeft();
@@ -300,11 +321,20 @@ String? _cleanDocumentation(String? doc) {
     }
     cleanedLines.add(line);
   }
-  
+
   return cleanedLines.join('\n').trim();
 }
 
 DocClass _processClass(ClassElement element) {
+  // Determine inheritance - use superclass if not Object
+  String? inheritance;
+  if (element.supertype != null) {
+    final superclassName = element.supertype!.getDisplayString();
+    if (superclassName != 'Object') {
+      inheritance = superclassName;
+    }
+  }
+
   return DocClass(
     name: element.name,
     documentation: _cleanDocumentation(element.documentationComment),
@@ -314,6 +344,7 @@ DocClass _processClass(ClassElement element) {
     isBase: element.isBase,
     isMixinClass: element.isMixinClass,
     typeParameters: element.typeParameters.map((tp) => tp.name).toList(),
+    inheritance: inheritance,
     superclass: element.supertype?.getDisplayString(),
     interfaces: element.interfaces.map((i) => i.getDisplayString()).toList(),
     mixins: element.mixins.map((m) => m.getDisplayString()).toList(),
@@ -321,7 +352,7 @@ DocClass _processClass(ClassElement element) {
         .where((c) => !c.isPrivate)
         .map((c) => _processConstructor(c))
         .toList(),
-    fields: element.fields
+    properties: element.fields
         .where((f) => !f.isPrivate && !f.isSynthetic)
         .map((f) => _processField(f))
         .toList(),
@@ -343,7 +374,7 @@ DocEnum _processEnum(EnumElement element) {
               documentation: _cleanDocumentation(f.documentationComment),
             ))
         .toList(),
-    fields: element.fields
+    properties: element.fields
         .where((f) => !f.isPrivate && !f.isSynthetic && !f.isEnumConstant)
         .map((f) => _processField(f))
         .toList(),
@@ -361,7 +392,7 @@ DocMixin _processMixin(MixinElement element) {
     typeParameters: element.typeParameters.map((tp) => tp.name).toList(),
     on: element.superclassConstraints.map((s) => s.getDisplayString()).toList(),
     interfaces: element.interfaces.map((i) => i.getDisplayString()).toList(),
-    fields: element.fields
+    properties: element.fields
         .where((f) => !f.isPrivate && !f.isSynthetic)
         .map((f) => _processField(f))
         .toList(),
@@ -377,7 +408,7 @@ DocExtension _processExtension(ExtensionElement element) {
     name: element.name,
     documentation: _cleanDocumentation(element.documentationComment),
     extendedType: element.extendedType.getDisplayString(),
-    fields: element.fields
+    properties: element.fields
         .where((f) => !f.isPrivate && !f.isSynthetic)
         .map((f) => _processField(f))
         .toList(),
@@ -390,7 +421,9 @@ DocExtension _processExtension(ExtensionElement element) {
 
 DocConstructor _processConstructor(ConstructorElement element) {
   return DocConstructor(
-    name: element.name.isEmpty ? element.enclosingElement3.name : '${element.enclosingElement3.name}.${element.name}',
+    name: element.name.isEmpty
+        ? element.enclosingElement3.name
+        : '${element.enclosingElement3.name}.${element.name}',
     documentation: _cleanDocumentation(element.documentationComment),
     isConst: element.isConst,
     isFactory: element.isFactory,

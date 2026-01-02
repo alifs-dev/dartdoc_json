@@ -45,11 +45,12 @@ class DocClass {
   final bool isBase;
   final bool isMixinClass;
   final List<String> typeParameters;
+  final String? inheritance;
   final String? superclass;
   final List<String> interfaces;
   final List<String> mixins;
   final List<DocConstructor> constructors;
-  final List<DocField> fields;
+  final List<DocField> properties;
   final List<DocMethod> methods;
 
   DocClass({
@@ -61,11 +62,12 @@ class DocClass {
     required this.isBase,
     required this.isMixinClass,
     required this.typeParameters,
+    this.inheritance,
     this.superclass,
     required this.interfaces,
     required this.mixins,
     required this.constructors,
-    required this.fields,
+    required this.properties,
     required this.methods,
   });
 
@@ -78,11 +80,12 @@ class DocClass {
         'isBase': isBase,
         'isMixinClass': isMixinClass,
         'typeParameters': typeParameters,
+        'inheritance': inheritance,
         'superclass': superclass,
         'interfaces': interfaces,
         'mixins': mixins,
         'constructors': constructors.map((c) => c.toJson()).toList(),
-        'fields': fields.map((f) => f.toJson()).toList(),
+        'properties': properties.map((f) => f.toJson()).toList(),
         'methods': methods.map((m) => m.toJson()).toList(),
       };
 }
@@ -91,14 +94,14 @@ class DocEnum {
   final String name;
   final String? documentation;
   final List<DocEnumValue> values;
-  final List<DocField> fields;
+  final List<DocField> properties;
   final List<DocMethod> methods;
 
   DocEnum({
     required this.name,
     this.documentation,
     required this.values,
-    required this.fields,
+    required this.properties,
     required this.methods,
   });
 
@@ -106,7 +109,7 @@ class DocEnum {
         'name': name,
         'documentation': documentation,
         'values': values.map((v) => v.toJson()).toList(),
-        'fields': fields.map((f) => f.toJson()).toList(),
+        'properties': properties.map((f) => f.toJson()).toList(),
         'methods': methods.map((m) => m.toJson()).toList(),
       };
 }
@@ -129,7 +132,7 @@ class DocMixin {
   final List<String> typeParameters;
   final List<String> on;
   final List<String> interfaces;
-  final List<DocField> fields;
+  final List<DocField> properties;
   final List<DocMethod> methods;
 
   DocMixin({
@@ -138,7 +141,7 @@ class DocMixin {
     required this.typeParameters,
     required this.on,
     required this.interfaces,
-    required this.fields,
+    required this.properties,
     required this.methods,
   });
 
@@ -148,7 +151,7 @@ class DocMixin {
         'typeParameters': typeParameters,
         'on': on,
         'interfaces': interfaces,
-        'fields': fields.map((f) => f.toJson()).toList(),
+        'properties': properties.map((f) => f.toJson()).toList(),
         'methods': methods.map((m) => m.toJson()).toList(),
       };
 }
@@ -157,14 +160,14 @@ class DocExtension {
   final String? name;
   final String? documentation;
   final String extendedType;
-  final List<DocField> fields;
+  final List<DocField> properties;
   final List<DocMethod> methods;
 
   DocExtension({
     this.name,
     this.documentation,
     required this.extendedType,
-    required this.fields,
+    required this.properties,
     required this.methods,
   });
 
@@ -172,7 +175,7 @@ class DocExtension {
         'name': name,
         'documentation': documentation,
         'extendedType': extendedType,
-        'fields': fields.map((f) => f.toJson()).toList(),
+        'properties': properties.map((f) => f.toJson()).toList(),
         'methods': methods.map((m) => m.toJson()).toList(),
       };
 }
